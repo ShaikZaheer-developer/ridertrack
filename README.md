@@ -1,6 +1,6 @@
 # 🛵 RiderTrack — Last-Mile Delivery Intelligence Platform
 
-> **Startup-grade full-stack project** — Uber/Zomato/Zepto quality design · Real-time WebSocket · FastAPI · SQLite · ML Engine · Live Fleet Map
+> **Full-stack project** — Uber/Zomato/Zepto quality design · Real-time WebSocket · FastAPI · SQLite · ML Engine · Live Fleet Map
 
 ![Python 3.11](https://img.shields.io/badge/Python-3.11-blue?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?logo=fastapi&logoColor=white)
@@ -347,4 +347,4 @@ CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
 ---
 
-*Built by **Anwar** · B.Tech AI & Data Science · Ramachandra College of Engineering, Eluru*
+*Built by **Zaheer** · B.Tech AI & Data Science.*
