@@ -1,0 +1,1683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RiderTrack — Last-Mile Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+/* ══════════════════════════════════════════════════
+   RESET & TOKENS
+══════════════════════════════════════════════════ */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box }
+
+:root {
+  --bg:       #F7F8FC;
+  --surface:  #FFFFFF;
+  --surface2: #F0F2F8;
+  --border:   #E4E8F0;
+  --border2:  #CBD2E0;
+  --ink:      #0F1728;
+  --ink2:     #4A5568;
+  --ink3:     #8896A9;
+  --ink4:     #B8C4D0;
+
+  /* Brand */
+  --brand:    #FF4B00;
+  --brand-lt: #FFF3EE;
+  --brand-dk: #CC3A00;
+
+  /* Semantics */
+  --green:    #00C48C;
+  --green-lt: #E8FAF4;
+  --amber:    #FFB020;
+  --amber-lt: #FFF8E8;
+  --blue:     #3B7FFF;
+  --blue-lt:  #EBF2FF;
+  --red:      #F53D3D;
+  --red-lt:   #FEF0F0;
+  --purple:   #7C5CBF;
+  --purple-lt:#F3F0FD;
+
+  --font:     'Plus Jakarta Sans', sans-serif;
+  --mono:     'JetBrains Mono', monospace;
+  --radius:   12px;
+  --radius-lg:18px;
+  --shadow:   0 1px 3px rgba(0,0,0,.06), 0 4px 12px rgba(0,0,0,.04);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.10);
+}
+
+body { font-family:var(--font); background:var(--bg); color:var(--ink); font-size:14px; line-height:1.5; overflow-x:hidden }
+
+/* ══════════════════════════════════════════════════
+   LAYOUT SHELL
+══════════════════════════════════════════════════ */
+.shell { display:grid; grid-template-columns:240px 1fr; grid-template-rows:auto 1fr; min-height:100vh }
+
+/* ── Topbar ── */
+.topbar {
+  grid-column:1/-1; display:flex; align-items:center; gap:16px;
+  height:60px; padding:0 24px;
+  background:var(--surface); border-bottom:1px solid var(--border);
+  position:sticky; top:0; z-index:200;
+}
+.brand { display:flex; align-items:center; gap:10px; text-decoration:none }
+.brand-logo {
+  width:34px; height:34px; border-radius:10px;
+  background:var(--brand); display:flex; align-items:center; justify-content:center;
+}
+.brand-logo svg { width:18px; height:18px; fill:#fff }
+.brand-name { font-size:17px; font-weight:800; color:var(--ink); letter-spacing:-.4px }
+.brand-name span { color:var(--brand) }
+.topbar-divider { width:1px; height:20px; background:var(--border) }
+.live-pill {
+  display:flex; align-items:center; gap:6px; padding:5px 12px;
+  background:var(--green-lt); border-radius:20px; font-size:12px; font-weight:600; color:var(--green)
+}
+.live-pulse { width:7px; height:7px; border-radius:50%; background:var(--green); animation:livepulse 1.4s infinite }
+@keyframes livepulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.5);opacity:.7} }
+.topbar-search {
+  flex:1; max-width:360px; display:flex; align-items:center; gap:8px;
+  background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:0 14px; height:38px;
+}
+.topbar-search input { border:none; background:transparent; font-family:var(--font); font-size:13px; color:var(--ink); outline:none; flex:1 }
+.topbar-search input::placeholder { color:var(--ink3) }
+.topbar-right { margin-left:auto; display:flex; align-items:center; gap:10px }
+.topbar-btn {
+  display:flex; align-items:center; gap:6px; padding:7px 16px; border-radius:9px;
+  font-family:var(--font); font-size:13px; font-weight:600; cursor:pointer; transition:all .15s;
+  border:1.5px solid var(--border); background:var(--surface); color:var(--ink2);
+}
+.topbar-btn:hover { background:var(--surface2); border-color:var(--border2); color:var(--ink) }
+.topbar-btn.primary { background:var(--brand); border-color:var(--brand); color:#fff }
+.topbar-btn.primary:hover { background:var(--brand-dk) }
+.clock { font-family:var(--mono); font-size:13px; color:var(--ink3); padding:6px 12px; background:var(--surface2); border-radius:8px }
+
+/* ── Sidebar ── */
+.sidebar {
+  background:var(--surface); border-right:1px solid var(--border);
+  padding:16px 12px; display:flex; flex-direction:column; gap:4px;
+  position:sticky; top:60px; height:calc(100vh - 60px); overflow-y:auto;
+}
+.nav-group-label { font-size:10px; font-weight:700; letter-spacing:1px; color:var(--ink4); padding:12px 10px 6px; text-transform:uppercase }
+.nav-item {
+  display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:10px;
+  cursor:pointer; color:var(--ink2); font-size:13px; font-weight:500;
+  transition:all .15s; border:1px solid transparent;
+}
+.nav-item:hover { background:var(--surface2); color:var(--ink) }
+.nav-item.active { background:var(--brand-lt); color:var(--brand); border-color:rgba(255,75,0,.12) }
+.nav-item .ni { width:18px; height:18px; flex-shrink:0 }
+.nav-badge {
+  margin-left:auto; min-width:20px; height:20px; border-radius:10px; padding:0 6px;
+  background:var(--brand); color:#fff; font-size:10px; font-weight:700;
+  display:flex; align-items:center; justify-content:center;
+}
+.sidebar-model {
+  margin-top:auto; padding:14px; background:linear-gradient(135deg,#0F1728 0%,#1a2540 100%);
+  border-radius:14px; color:#fff;
+}
+.sm-label { font-size:10px; font-weight:600; letter-spacing:1px; color:rgba(255,255,255,.5) }
+.sm-val { font-size:22px; font-weight:800; font-family:var(--mono); color:var(--green); margin:4px 0 2px }
+.sm-sub { font-size:11px; color:rgba(255,255,255,.4) }
+
+/* ── Main ── */
+.main { padding:24px; overflow-y:auto; display:flex; flex-direction:column; gap:22px }
+.page { display:none }
+.page.active { display:flex; flex-direction:column; gap:22px }
+.page-header { display:flex; align-items:flex-end; justify-content:space-between; gap:16px }
+.page-title { font-size:20px; font-weight:800; color:var(--ink); letter-spacing:-.3px }
+.page-sub { font-size:13px; color:var(--ink3); margin-top:2px }
+
+/* ══════════════════════════════════════════════════
+   CARDS
+══════════════════════════════════════════════════ */
+.card {
+  background:var(--surface); border-radius:var(--radius-lg);
+  border:1px solid var(--border); box-shadow:var(--shadow);
+  padding:20px;
+}
+.card-hd { font-size:14px; font-weight:700; color:var(--ink); margin-bottom:2px }
+.card-sub { font-size:12px; color:var(--ink3); margin-bottom:16px }
+
+/* ══════════════════════════════════════════════════
+   KPI GRID
+══════════════════════════════════════════════════ */
+.kpi-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:14px }
+.kpi {
+  background:var(--surface); border-radius:var(--radius-lg); border:1px solid var(--border);
+  box-shadow:var(--shadow); padding:18px 20px; cursor:pointer;
+  transition:transform .15s, box-shadow .15s;
+}
+.kpi:hover { transform:translateY(-2px); box-shadow:var(--shadow-lg) }
+.kpi-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px }
+.kpi-icon { width:40px; height:40px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:18px }
+.kpi-trend { font-size:11px; font-weight:600; padding:3px 7px; border-radius:20px }
+.kpi-val { font-size:28px; font-weight:800; letter-spacing:-.5px; line-height:1; margin-bottom:4px }
+.kpi-lbl { font-size:12px; color:var(--ink3); font-weight:500 }
+.kpi.brand .kpi-icon { background:var(--brand-lt); }
+.kpi.brand .kpi-val { color:var(--brand) }
+.kpi.green .kpi-icon { background:var(--green-lt) }
+.kpi.green .kpi-val { color:var(--green) }
+.kpi.amber .kpi-icon { background:var(--amber-lt) }
+.kpi.amber .kpi-val { color:var(--amber) }
+.kpi.red .kpi-icon { background:var(--red-lt) }
+.kpi.red .kpi-val { color:var(--red) }
+.kpi.blue .kpi-icon { background:var(--blue-lt) }
+.kpi.blue .kpi-val { color:var(--blue) }
+.trend-up { background:var(--green-lt); color:var(--green) }
+.trend-dn { background:var(--red-lt); color:var(--red) }
+.trend-nt { background:var(--surface2); color:var(--ink3) }
+
+/* ══════════════════════════════════════════════════
+   MAP (Canvas-based)
+══════════════════════════════════════════════════ */
+.map-wrap { border-radius:14px; overflow:hidden; position:relative; background:#E8EFF8 }
+.map-canvas { width:100%; display:block }
+.map-controls {
+  position:absolute; top:12px; right:12px; display:flex; flex-direction:column; gap:6px
+}
+.map-btn {
+  width:34px; height:34px; border-radius:8px;
+  background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow);
+  cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:15px;
+  transition:all .15s;
+}
+.map-btn:hover { background:var(--surface2) }
+.map-overlay {
+  position:absolute; bottom:12px; left:12px; display:flex; gap:8px;
+}
+.map-legend-pill {
+  display:flex; align-items:center; gap:6px; padding:5px 10px;
+  background:rgba(255,255,255,.92); backdrop-filter:blur(8px);
+  border-radius:20px; font-size:11px; font-weight:600; color:var(--ink2);
+  border:1px solid rgba(255,255,255,.6);
+}
+.map-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0 }
+
+/* ══════════════════════════════════════════════════
+   TABLE
+══════════════════════════════════════════════════ */
+.tbl-wrap { overflow:auto; margin:-1px }
+table { width:100%; border-collapse:collapse; font-size:13px }
+th {
+  padding:10px 14px; text-align:left;
+  font-size:11px; font-weight:700; letter-spacing:.4px; color:var(--ink3);
+  background:var(--surface2); border-bottom:1px solid var(--border);
+  white-space:nowrap; text-transform:uppercase;
+}
+th:first-child { border-radius:8px 0 0 8px }
+th:last-child  { border-radius:0 8px 8px 0 }
+td { padding:11px 14px; border-bottom:1px solid var(--border); color:var(--ink2); vertical-align:middle }
+tr:last-child td { border-bottom:none }
+tr:hover td { background:rgba(255,75,0,.025) }
+.tid { font-family:var(--mono); font-size:12px; color:var(--brand); font-weight:500 }
+
+/* ══════════════════════════════════════════════════
+   BADGES & PILLS
+══════════════════════════════════════════════════ */
+.badge {
+  display:inline-flex; align-items:center; gap:4px; padding:3px 10px;
+  border-radius:20px; font-size:11px; font-weight:700; white-space:nowrap;
+}
+.b-delivered { background:var(--green-lt); color:var(--green) }
+.b-transit   { background:var(--blue-lt);  color:var(--blue) }
+.b-delayed   { background:var(--red-lt);   color:var(--red) }
+.b-pending   { background:var(--amber-lt); color:var(--amber) }
+.b-cancelled { background:var(--surface2); color:var(--ink3) }
+.b-express   { background:var(--purple-lt);color:var(--purple) }
+.b-normal    { background:var(--surface2); color:var(--ink3) }
+.b-sameday   { background:var(--brand-lt); color:var(--brand) }
+
+/* ══════════════════════════════════════════════════
+   PREDICT FORM
+══════════════════════════════════════════════════ */
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px }
+.fg { display:flex; flex-direction:column; gap:6px }
+.fl { font-size:12px; font-weight:600; color:var(--ink2) }
+.fi {
+  height:40px; padding:0 12px; border-radius:9px;
+  border:1.5px solid var(--border); background:var(--surface);
+  font-family:var(--font); font-size:13px; color:var(--ink); outline:none;
+  transition:border-color .15s;
+}
+.fi:focus { border-color:var(--brand) }
+select.fi { cursor:pointer }
+.fi-range { display:flex; align-items:center; gap:8px; height:40px }
+.fi-range input[type=range] { flex:1; accent-color:var(--brand); height:4px }
+.fi-rval { font-family:var(--mono); font-size:13px; font-weight:600; color:var(--brand); min-width:36px; text-align:right }
+.fi-check { display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:9px; border:1.5px solid var(--border); cursor:pointer; transition:all .15s }
+.fi-check:hover { border-color:var(--brand); background:var(--brand-lt) }
+.fi-check input { accent-color:var(--brand); width:16px; height:16px; cursor:pointer }
+.fi-check label { font-size:13px; font-weight:500; cursor:pointer }
+.predict-submit {
+  grid-column:1/-1; height:48px; border-radius:12px; border:none;
+  background:var(--brand); color:#fff; font-family:var(--font);
+  font-size:15px; font-weight:700; cursor:pointer; transition:all .2s;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.predict-submit:hover { background:var(--brand-dk); transform:translateY(-1px); box-shadow:0 4px 16px rgba(255,75,0,.3) }
+.predict-submit:active { transform:translateY(0) }
+
+/* ── Result card ── */
+.result-card {
+  background:linear-gradient(135deg,#0F1728 0%,#1E2B45 100%);
+  border-radius:var(--radius-lg); padding:24px; color:#fff;
+  display:flex; flex-direction:column; gap:18px;
+}
+.result-top { display:flex; align-items:flex-start; justify-content:space-between }
+.result-label { font-size:11px; font-weight:600; letter-spacing:1px; color:rgba(255,255,255,.4); margin-bottom:6px }
+.result-eta { font-size:56px; font-weight:800; line-height:1; font-family:var(--mono); color:#fff }
+.result-range { font-size:12px; color:rgba(255,255,255,.5); margin-top:6px; font-family:var(--mono) }
+.result-cat { padding:5px 14px; border-radius:20px; font-size:12px; font-weight:700 }
+.conf-wrap { margin-bottom:4px }
+.conf-label { display:flex; justify-content:space-between; font-size:12px; color:rgba(255,255,255,.6); margin-bottom:6px }
+.conf-track { height:5px; background:rgba(255,255,255,.15); border-radius:3px; overflow:hidden }
+.conf-fill { height:100%; background:var(--green); border-radius:3px; transition:width .7s cubic-bezier(.4,0,.2,1) }
+.factor-item {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:8px 12px; background:rgba(255,255,255,.06); border-radius:9px;
+}
+.factor-nm { font-size:13px; color:rgba(255,255,255,.8) }
+.factor-impact { font-size:12px; font-family:var(--mono); font-weight:600 }
+.factor-impact.high { color:var(--red) }
+.factor-impact.medium { color:var(--amber) }
+.factor-impact.low { color:rgba(255,255,255,.5) }
+.factor-impact.positive { color:var(--green) }
+
+/* ══════════════════════════════════════════════════
+   DRIVER CARD
+══════════════════════════════════════════════════ */
+.driver-card {
+  display:flex; align-items:center; gap:12px; padding:12px 0;
+  border-bottom:1px solid var(--border);
+}
+.driver-card:last-child { border-bottom:none }
+.driver-av {
+  width:40px; height:40px; border-radius:12px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-weight:700; font-size:14px;
+}
+.driver-nm { font-size:13px; font-weight:700; color:var(--ink) }
+.driver-meta { font-size:11px; color:var(--ink3); margin-top:1px }
+.driver-right { margin-left:auto; text-align:right }
+.driver-rate { font-size:17px; font-weight:800; font-family:var(--mono) }
+.driver-stars { font-size:11px; color:var(--amber); margin-top:1px }
+.driver-badge { font-size:10px; font-weight:600; padding:2px 7px; border-radius:20px; margin-top:3px }
+
+/* ══════════════════════════════════════════════════
+   ZONE CHART BARS
+══════════════════════════════════════════════════ */
+.zone-bar-row { margin-bottom:12px }
+.zone-bar-hd { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:5px }
+.zone-bar-nm { font-size:12px; font-weight:600; color:var(--ink2) }
+.zone-bar-val { font-family:var(--mono); font-size:12px; font-weight:600 }
+.zone-track { height:6px; background:var(--surface2); border-radius:3px; overflow:hidden }
+.zone-fill { height:100%; border-radius:3px; transition:width .9s cubic-bezier(.4,0,.2,1) }
+
+/* ══════════════════════════════════════════════════
+   TIMELINE
+══════════════════════════════════════════════════ */
+.timeline { display:flex; flex-direction:column; gap:0 }
+.tl-item { display:flex; gap:14px; padding-bottom:20px; position:relative }
+.tl-item:last-child { padding-bottom:0 }
+.tl-item::before {
+  content:''; position:absolute; left:14px; top:28px; bottom:0;
+  width:1.5px; background:var(--border);
+}
+.tl-item:last-child::before { display:none }
+.tl-dot {
+  width:29px; height:29px; border-radius:50%; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; font-size:12px;
+  border:2px solid; z-index:1;
+}
+.tl-dot.done { background:var(--green-lt); border-color:var(--green); color:var(--green) }
+.tl-dot.active { background:var(--blue-lt); border-color:var(--blue); color:var(--blue) }
+.tl-dot.waiting { background:var(--surface2); border-color:var(--border); color:var(--ink3) }
+.tl-content { flex:1; padding-top:4px }
+.tl-title { font-size:13px; font-weight:600; color:var(--ink) }
+.tl-time { font-size:11px; color:var(--ink3); font-family:var(--mono); margin-top:2px }
+
+/* ══════════════════════════════════════════════════
+   TOAST ALERTS
+══════════════════════════════════════════════════ */
+.toast-shelf { position:fixed; top:72px; right:18px; z-index:9999; display:flex; flex-direction:column; gap:8px; pointer-events:none }
+.toast {
+  display:flex; align-items:center; gap:10px; padding:11px 16px;
+  border-radius:12px; box-shadow:var(--shadow-lg);
+  background:var(--surface); border:1px solid var(--border);
+  font-size:13px; font-weight:500; max-width:340px;
+  animation:toastIn .3s cubic-bezier(.34,1.56,.64,1) both;
+  pointer-events:all; cursor:pointer;
+}
+.toast.success { border-left:3px solid var(--green) }
+.toast.warning { border-left:3px solid var(--amber) }
+.toast.info    { border-left:3px solid var(--blue) }
+@keyframes toastIn { from{transform:translateX(24px);opacity:0} to{transform:translateX(0);opacity:1} }
+
+/* ══════════════════════════════════════════════════
+   DELIVERY DETAIL MODAL
+══════════════════════════════════════════════════ */
+.modal-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1000;
+  display:flex; align-items:center; justify-content:center; padding:20px;
+  backdrop-filter:blur(4px);
+}
+.modal-box {
+  background:var(--surface); border-radius:20px; width:100%; max-width:580px;
+  max-height:90vh; overflow-y:auto; box-shadow:var(--shadow-lg);
+  animation:modalIn .25s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes modalIn { from{transform:scale(.94);opacity:0} to{transform:scale(1);opacity:1} }
+.modal-hd {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:20px 24px 0; position:sticky; top:0; background:var(--surface);
+  border-radius:20px 20px 0 0; z-index:1;
+}
+.modal-close {
+  width:32px; height:32px; border-radius:8px; border:1.5px solid var(--border);
+  background:var(--surface); cursor:pointer; font-size:16px; display:flex;
+  align-items:center; justify-content:center;
+}
+.modal-body { padding:20px 24px 24px }
+.modal-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px }
+.mg-item { background:var(--surface2); border-radius:10px; padding:12px 14px }
+.mg-label { font-size:11px; font-weight:600; color:var(--ink3); margin-bottom:4px; text-transform:uppercase; letter-spacing:.5px }
+.mg-val { font-size:14px; font-weight:700; color:var(--ink) }
+
+/* ══════════════════════════════════════════════════
+   SCROLLBAR
+══════════════════════════════════════════════════ */
+::-webkit-scrollbar { width:5px; height:5px }
+::-webkit-scrollbar-track { background:transparent }
+::-webkit-scrollbar-thumb { background:var(--border2); border-radius:3px }
+
+/* ══════════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════════ */
+@media (max-width: 1100px) {
+  .kpi-grid { grid-template-columns:repeat(3,1fr) }
+}
+</style>
+</head>
+<body>
+
+<div class="toast-shelf" id="toasts"></div>
+
+<!-- ════════════════════════════════ SHELL ════════════════════════════════ -->
+<div class="shell">
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <a class="brand" onclick="showPage('dashboard')">
+    <div class="brand-logo">
+      <svg viewBox="0 0 20 20"><path d="M10 2L3 7v11h5v-5h4v5h5V7z"/></svg>
+    </div>
+    <span class="brand-name">Rider<span>Track</span></span>
+  </a>
+  <div class="topbar-divider"></div>
+  <div class="live-pill"><span class="live-pulse"></span>LIVE</div>
+  <div class="topbar-search">
+    <svg width="14" height="14" fill="none" viewBox="0 0 20 20"><circle cx="8" cy="8" r="6" stroke="#8896A9" stroke-width="1.8"/><path d="M15 15l-3-3" stroke="#8896A9" stroke-width="1.8" stroke-linecap="round"/></svg>
+    <input id="searchInput" placeholder="Search by ID, customer, zone…" oninput="handleSearch(this.value)">
+  </div>
+  <div class="topbar-right">
+    <div class="clock" id="clock">--:--:--</div>
+    <button class="topbar-btn" onclick="showPage('predict')">⚡ Predict ETA</button>
+    <button class="topbar-btn primary" onclick="openNewDelivery()">+ New Order</button>
+  </div>
+</header>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="nav-group-label">Overview</div>
+
+  <div class="nav-item active" data-page="dashboard" onclick="navClick(this,'dashboard')">
+    <svg class="ni" viewBox="0 0 18 18" fill="currentColor"><path d="M2 2h6v6H2zm8 0h6v6h-6zM2 10h6v6H2zm8 0h6v6h-6z"/></svg>
+    Dashboard
+  </div>
+
+  <div class="nav-item" data-page="deliveries" onclick="navClick(this,'deliveries')">
+    <svg class="ni" viewBox="0 0 18 18" fill="currentColor"><path d="M4 4h3v3H4zm0 5h3v3H4zm5-5h3v3H9zm0 5h3v3H9zm5-5h1v10H4V3h10v1z" opacity=".4"/><rect x="3" y="3" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+    Deliveries
+    <span class="nav-badge" id="navBadge">—</span>
+  </div>
+
+  <div class="nav-item" data-page="predict" onclick="navClick(this,'predict')">
+    <svg class="ni" viewBox="0 0 18 18" fill="currentColor"><path d="M9 1l2.5 5 5.5.8-4 3.9.94 5.5L9 13.5 4.06 16.2 5 10.7 1 6.8l5.5-.8z"/></svg>
+    Predict ETA
+  </div>
+
+  <div class="nav-group-label" style="margin-top:8px">Analytics</div>
+
+  <div class="nav-item" data-page="analytics" onclick="navClick(this,'analytics')">
+    <svg class="ni" viewBox="0 0 18 18" fill="currentColor"><path d="M2 14h2V8H2zm4 0h2V5H6zm4 0h2V2h-2zm4 0h2V9h-2z"/></svg>
+    Analytics
+  </div>
+
+  <div class="nav-item" data-page="map" onclick="navClick(this,'map')">
+    <svg class="ni" viewBox="0 0 18 18" fill="currentColor"><path d="M9 2C6.24 2 4 4.24 4 7c0 3.75 5 9 5 9s5-5.25 5-9c0-2.76-2.24-5-5-5zm0 6.5c-1.38 0-2.5-1.12-2.5-2.5S7.62 3.5 9 3.5 11.5 4.62 11.5 6 10.38 8.5 9 8.5z"/></svg>
+    Live Map
+  </div>
+
+  <div class="nav-item" data-page="drivers" onclick="navClick(this,'drivers')">
+    <svg class="ni" viewBox="0 0 18 18" fill="currentColor"><path d="M9 9a4 4 0 100-8 4 4 0 000 8zm-7 8a7 7 0 0114 0H2z"/></svg>
+    Drivers
+  </div>
+
+  <!-- Model box -->
+  <div class="sidebar-model">
+    <div class="sm-label">ML MODEL</div>
+    <div class="sm-val" id="sbMae">±3.5 min</div>
+    <div class="sm-sub">GBM · 26 features · 82% acc</div>
+  </div>
+</nav>
+
+<!-- ═════════════════ MAIN ═════════════════ -->
+<main class="main">
+
+<!-- ════════ DASHBOARD PAGE ════════ -->
+<section class="page active" id="page-dashboard">
+
+  <div class="page-header">
+    <div>
+      <div class="page-title">Operations Dashboard</div>
+      <div class="page-sub" id="dashSubtitle">Loading live data…</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="topbar-btn" onclick="loadDashboard()">↻ Refresh</button>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid">
+    <div class="kpi brand" onclick="showPage('deliveries')">
+      <div class="kpi-top">
+        <div class="kpi-icon">📦</div>
+        <span class="kpi-trend trend-up" id="kt1">Today</span>
+      </div>
+      <div class="kpi-val" id="kv1">—</div>
+      <div class="kpi-lbl">Total Orders</div>
+    </div>
+    <div class="kpi green">
+      <div class="kpi-top">
+        <div class="kpi-icon">✅</div>
+        <span class="kpi-trend trend-nt" id="kt2">—</span>
+      </div>
+      <div class="kpi-val" id="kv2">—</div>
+      <div class="kpi-lbl">Delivered</div>
+    </div>
+    <div class="kpi amber">
+      <div class="kpi-top">
+        <div class="kpi-icon">🛵</div>
+        <span class="kpi-trend trend-nt" id="kt3">active</span>
+      </div>
+      <div class="kpi-val" id="kv3">—</div>
+      <div class="kpi-lbl">In Transit</div>
+    </div>
+    <div class="kpi red">
+      <div class="kpi-top">
+        <div class="kpi-icon">⚠️</div>
+        <span class="kpi-trend trend-dn" id="kt4">attention</span>
+      </div>
+      <div class="kpi-val" id="kv4">—</div>
+      <div class="kpi-lbl">Delayed</div>
+    </div>
+    <div class="kpi blue">
+      <div class="kpi-top">
+        <div class="kpi-icon">🎯</div>
+        <span class="kpi-trend trend-up" id="kt5">target 85%</span>
+      </div>
+      <div class="kpi-val" id="kv5">—</div>
+      <div class="kpi-lbl">On-Time Rate</div>
+    </div>
+  </div>
+
+  <!-- Charts row -->
+  <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:16px">
+    <div class="card">
+      <div class="card-hd">Hourly Delivery Volume</div>
+      <div class="card-sub">Past 7 days · deliveries vs delays</div>
+      <div style="position:relative;height:210px"><canvas id="cHourly" role="img" aria-label="Hourly volume bar chart">Hourly delivery data</canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-hd">Status Breakdown</div>
+      <div class="card-sub">All deliveries today</div>
+      <div id="statusLegend" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;font-size:11px;font-weight:600"></div>
+      <div style="position:relative;height:170px"><canvas id="cDonut" role="img" aria-label="Status donut chart">Status distribution</canvas></div>
+    </div>
+  </div>
+
+  <!-- Map + Zone Performance -->
+  <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:16px">
+    <div class="card" style="padding:0;overflow:hidden">
+      <div style="padding:16px 20px 12px;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div class="card-hd">Live Fleet Map</div>
+          <div class="card-sub" style="margin:0">Hyderabad · auto-updating every 2.5s</div>
+        </div>
+        <div id="fleetCount" style="font-size:12px;font-weight:600;color:var(--green);background:var(--green-lt);padding:4px 10px;border-radius:20px">— riders</div>
+      </div>
+      <div class="map-wrap">
+        <canvas id="mapMain" class="map-canvas" style="height:280px"></canvas>
+        <div class="map-overlay">
+          <div class="map-legend-pill"><span class="map-dot" style="background:var(--blue)"></span>Moving</div>
+          <div class="map-legend-pill"><span class="map-dot" style="background:var(--green)"></span>Delivered</div>
+          <div class="map-legend-pill"><span class="map-dot" style="background:var(--red)"></span>Delayed</div>
+          <div class="map-legend-pill" style="background:#FF4B00;color:#fff"><span class="map-dot" style="background:#fff"></span>Hub</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd">Zone Performance</div>
+      <div class="card-sub">Avg delivery time by area</div>
+      <div id="zoneBars"></div>
+    </div>
+  </div>
+
+  <!-- Recent deliveries -->
+  <div class="card" style="padding:0;overflow:hidden">
+    <div style="padding:16px 20px 12px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div class="card-hd">Recent Deliveries</div>
+        <div class="card-sub" style="margin:0">Latest activity · click a row to view details</div>
+      </div>
+      <button class="topbar-btn" style="font-size:12px;padding:5px 12px" onclick="navClick(document.querySelector('[data-page=deliveries]'),'deliveries')">View all →</button>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>Order ID</th><th>Customer</th><th>Zone</th><th>Driver</th>
+          <th>Distance</th><th>ETA</th><th>Status</th><th>Priority</th>
+        </tr></thead>
+        <tbody id="tbRecent"></tbody>
+      </table>
+    </div>
+  </div>
+
+</section>
+
+<!-- ════════ DELIVERIES PAGE ════════ -->
+<section class="page" id="page-deliveries">
+
+  <div class="page-header">
+    <div>
+      <div class="page-title">All Deliveries</div>
+      <div class="page-sub">Manage and track every order in real-time</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <select class="fi" id="fStatus" style="width:150px;height:36px" onchange="loadDeliveries(1)">
+        <option value="">All Status</option>
+        <option>DELIVERED</option><option>OUT_FOR_DELIVERY</option>
+        <option>DELAYED</option><option>PENDING</option><option>CANCELLED</option>
+      </select>
+      <select class="fi" id="fZone" style="width:170px;height:36px" onchange="loadDeliveries(1)">
+        <option value="">All Zones</option>
+      </select>
+      <select class="fi" id="fPriority" style="width:130px;height:36px" onchange="loadDeliveries(1)">
+        <option value="">All Priority</option>
+        <option>NORMAL</option><option>EXPRESS</option><option>SAME_DAY</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="card" style="padding:0;overflow:hidden">
+    <div class="tbl-wrap" id="delivTableWrap">
+      <div style="padding:40px;text-align:center;color:var(--ink3)">Loading deliveries…</div>
+    </div>
+    <div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink3)" id="pagination"></div>
+  </div>
+
+</section>
+
+<!-- ════════ PREDICT PAGE ════════ -->
+<section class="page" id="page-predict">
+
+  <div class="page-header">
+    <div>
+      <div class="page-title">Predict Delivery ETA</div>
+      <div class="page-sub">ML-powered estimate — GBM model · 26 engineered features</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1.1fr 1fr;gap:20px;align-items:start">
+    <div class="card">
+      <div class="card-hd">Order Details</div>
+      <div class="card-sub">Enter delivery parameters</div>
+      <div class="form-grid">
+
+        <div class="fg">
+          <span class="fl">Distance (km)</span>
+          <div class="fi-range">
+            <input type="range" min="0.5" max="25" value="7" step="0.5" id="pd_dist" oninput="pv('pd_dist_v',this.value,' km')">
+            <span class="fi-rval" id="pd_dist_v">7 km</span>
+          </div>
+        </div>
+
+        <div class="fg">
+          <span class="fl">Package Weight (kg)</span>
+          <div class="fi-range">
+            <input type="range" min="0.1" max="25" value="2" step="0.1" id="pd_wt" oninput="pv('pd_wt_v',parseFloat(this.value).toFixed(1),' kg')">
+            <span class="fi-rval" id="pd_wt_v">2.0 kg</span>
+          </div>
+        </div>
+
+        <div class="fg">
+          <span class="fl">Traffic Level</span>
+          <select class="fi" id="pd_traffic">
+            <option value="0">🟢 Low — Clear roads</option>
+            <option value="1" selected>🟡 Moderate — Some traffic</option>
+            <option value="2">🔴 Heavy — Rush hour / jam</option>
+          </select>
+        </div>
+
+        <div class="fg">
+          <span class="fl">Weather</span>
+          <select class="fi" id="pd_weather">
+            <option value="0">☀️ Clear</option>
+            <option value="1">⛅ Cloudy</option>
+            <option value="2">🌧️ Rain</option>
+            <option value="3">⛈️ Heavy Rain</option>
+          </select>
+        </div>
+
+        <div class="fg">
+          <span class="fl">Vehicle Type</span>
+          <select class="fi" id="pd_vehicle">
+            <option>Bike</option><option>Scooter</option>
+            <option>Van</option><option>Electric Bike</option>
+          </select>
+        </div>
+
+        <div class="fg">
+          <span class="fl">Order Priority</span>
+          <select class="fi" id="pd_priority">
+            <option>NORMAL</option><option>EXPRESS</option><option>SAME_DAY</option>
+          </select>
+        </div>
+
+        <div class="fg">
+          <span class="fl">Order Hour</span>
+          <div class="fi-range">
+            <input type="range" min="6" max="23" value="14" step="1" id="pd_hour" oninput="pv('pd_hour_v',this.value.padStart(2,'0')+':00','')">
+            <span class="fi-rval" id="pd_hour_v">14:00</span>
+          </div>
+        </div>
+
+        <div class="fg">
+          <span class="fl">Driver Experience (yrs)</span>
+          <div class="fi-range">
+            <input type="range" min="0.5" max="10" value="3" step="0.5" id="pd_exp" oninput="pv('pd_exp_v',this.value,' yr')">
+            <span class="fi-rval" id="pd_exp_v">3 yr</span>
+          </div>
+        </div>
+
+        <div class="fi-check" onclick="toggle('pd_cod')">
+          <input type="checkbox" id="pd_cod">
+          <label for="pd_cod">💵 Cash on Delivery</label>
+        </div>
+
+        <div class="fi-check" onclick="toggle('pd_fragile')">
+          <input type="checkbox" id="pd_fragile">
+          <label for="pd_fragile">📦 Fragile Package</label>
+        </div>
+
+        <button class="predict-submit" onclick="runPrediction()">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor"><path d="M9 1l2.5 5 5.5.8-4 3.9.94 5.5L9 13.5 4.06 16.2 5 10.7 1 6.8l5.5-.8z"/></svg>
+          Calculate Predicted ETA
+        </button>
+      </div>
+    </div>
+
+    <!-- Result -->
+    <div>
+      <div class="result-card" id="resultCard">
+        <div style="text-align:center;color:rgba(255,255,255,.3);padding:40px 0;font-size:14px">
+          Fill in the form and click Calculate →
+        </div>
+      </div>
+
+      <!-- Batch scenarios -->
+      <div class="card" style="margin-top:16px">
+        <div class="card-hd">Quick Scenarios</div>
+        <div class="card-sub">Pre-filled common delivery conditions</div>
+        <div style="display:flex;flex-direction:column;gap:8px" id="batchScenarios">
+          <div style="color:var(--ink3);font-size:12px">Loading…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ════════ ANALYTICS PAGE ════════ -->
+<section class="page" id="page-analytics">
+
+  <div class="page-header">
+    <div class="page-title">Analytics & Insights</div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div class="card">
+      <div class="card-hd">Average Delivery Time by Zone</div>
+      <div class="card-sub">Sorted fastest → slowest · 15 zones</div>
+      <div style="position:relative;height:360px"><canvas id="cZone" role="img" aria-label="Zone delivery time">Loading…</canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-hd">Delay Rate by Zone (%)</div>
+      <div class="card-sub">Percentage of late deliveries per zone</div>
+      <div style="position:relative;height:360px"><canvas id="cDelay" role="img" aria-label="Delay rate by zone">Loading…</canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd">Weekly Trend</div>
+    <div class="card-sub">7-day delivery volume with avg time overlay</div>
+    <div style="position:relative;height:200px"><canvas id="cWeekly" role="img" aria-label="Weekly trend">Loading…</canvas></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div class="card">
+      <div class="card-hd">Vehicle Type Distribution</div>
+      <div class="card-sub">Fleet composition</div>
+      <div id="vehicleLegend" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;font-size:11px;font-weight:600"></div>
+      <div style="position:relative;height:180px"><canvas id="cVehicle" role="img" aria-label="Vehicle distribution">Loading…</canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-hd">Priority Split</div>
+      <div class="card-sub">Normal vs Express vs Same-Day</div>
+      <div id="priorityLegend" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;font-size:11px;font-weight:600"></div>
+      <div style="position:relative;height:180px"><canvas id="cPriority" role="img" aria-label="Priority split">Loading…</canvas></div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ════════ MAP PAGE ════════ -->
+<section class="page" id="page-map">
+
+  <div class="page-header">
+    <div>
+      <div class="page-title">Live Fleet Tracker</div>
+      <div class="page-sub">Real-time GPS positions · Hyderabad operations zone</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="live-pill"><span class="live-pulse"></span>TRACKING LIVE</div>
+      <div id="mapRiderCount" style="font-size:13px;color:var(--ink3)">— riders active</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 300px;gap:16px">
+    <div class="card" style="padding:0;overflow:hidden">
+      <div class="map-wrap">
+        <canvas id="mapFull" class="map-canvas" style="height:500px"></canvas>
+        <div class="map-overlay">
+          <div class="map-legend-pill"><span class="map-dot" style="background:var(--blue)"></span>Moving</div>
+          <div class="map-legend-pill"><span class="map-dot" style="background:var(--green)"></span>Delivered</div>
+          <div class="map-legend-pill"><span class="map-dot" style="background:var(--red)"></span>Delayed</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;overflow-y:auto;max-height:520px">
+      <div id="mapRiderList" style="display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px" id="mapStatCards"></div>
+
+</section>
+
+<!-- ════════ DRIVERS PAGE ════════ -->
+<section class="page" id="page-drivers">
+
+  <div class="page-header">
+    <div class="page-title">Driver Leaderboard</div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div class="card">
+      <div class="card-hd">Top Performers</div>
+      <div class="card-sub">Ranked by total deliveries</div>
+      <div id="driverList"></div>
+    </div>
+    <div class="card">
+      <div class="card-hd">Performance Matrix</div>
+      <div class="card-sub">On-time rate vs average delivery time</div>
+      <div style="position:relative;height:320px"><canvas id="cDrivers" role="img" aria-label="Driver scatter plot">Loading…</canvas></div>
+    </div>
+  </div>
+
+</section>
+
+</main>
+</div>
+
+<!-- ═════════ DELIVERY DETAIL MODAL ═════════ -->
+<div class="modal-overlay" id="modal" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <div class="modal-hd">
+      <div>
+        <div style="font-size:17px;font-weight:800" id="modalTitle">Order Details</div>
+        <div style="font-size:12px;color:var(--ink3);margin-top:2px" id="modalSub"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody">Loading…</div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════
+   CONFIG & STATE
+══════════════════════════════════════════════════ */
+const API    = 'http://localhost:8000/api';
+const WS_URL = 'ws://localhost:8000/ws';
+let ws, livePositions = [], dashData = null;
+let delivPage = 1, analyticsBuilt = false;
+let mapZoom = 1.0, mapOffX = 0, mapOffY = 0;
+
+// Demo fallback data so dashboard works offline
+const DEMO_ZONES = [
+  {zone:"Gachibowli",avg_time:27.4,delay_rate:4.2,total:62,lat:17.4401,lng:78.3489},
+  {zone:"Banjara Hills",avg_time:31.8,delay_rate:7.1,total:58,lat:17.4156,lng:78.4347},
+  {zone:"Jubilee Hills",avg_time:33.2,delay_rate:8.5,total:51,lat:17.4316,lng:78.4077},
+  {zone:"HITEC City",avg_time:35.6,delay_rate:9.3,total:49,lat:17.4474,lng:78.3762},
+  {zone:"Madhapur",avg_time:38.1,delay_rate:11.0,total:45,lat:17.4486,lng:78.3908},
+  {zone:"Kondapur",avg_time:40.5,delay_rate:12.8,total:42,lat:17.460,lng:78.3615},
+  {zone:"Ameerpet",avg_time:29.9,delay_rate:6.0,total:38,lat:17.4374,lng:78.4478},
+  {zone:"Kukatpally",avg_time:47.2,delay_rate:16.5,total:33,lat:17.4849,lng:78.3996},
+  {zone:"Secunderabad",avg_time:43.1,delay_rate:14.2,total:28,lat:17.4399,lng:78.4983},
+  {zone:"Dilsukhnagar",avg_time:51.4,delay_rate:19.0,total:22,lat:17.3688,lng:78.5247},
+];
+
+/* ══════════════════════════════════════════════════
+   UTILS
+══════════════════════════════════════════════════ */
+const $ = id => document.getElementById(id);
+const pv = (id, val, sfx='') => { $(id).textContent = val + sfx };
+const toggle = id => $(id).checked = !$(id).checked;
+
+setInterval(()=>{ $('clock').textContent = new Date().toLocaleTimeString('en-IN',{hour12:false}) }, 1000);
+
+async function api(path, opts={}) {
+  try {
+    const r = await fetch(API + path, opts);
+    if (!r.ok) throw new Error(r.status);
+    return await r.json();
+  } catch { return null }
+}
+
+/* ══════════════════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════════════════ */
+function navClick(el, page) {
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  if (el) el.classList.add('active');
+  showPage(page);
+}
+
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const pg = $('page-'+page);
+  if (pg) pg.classList.add('active');
+  if (page==='deliveries') loadDeliveries(1);
+  if (page==='analytics')  buildAnalytics();
+  if (page==='drivers')    buildDriverPage();
+  if (page==='map')        startMapPage();
+  if (page==='predict')    loadBatchScenarios();
+}
+
+/* ══════════════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════════════ */
+function toast(type, msg, icon='') {
+  const shelf = $('toasts');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<span style="font-size:16px">${icon||{success:'✅',warning:'⚠️',info:'ℹ️'}[type]||'•'}</span>${msg}`;
+  t.onclick = ()=>t.remove();
+  shelf.appendChild(t);
+  setTimeout(()=>{ t.style.transition='opacity .3s'; t.style.opacity='0'; setTimeout(()=>t.remove(),300) }, 4200);
+}
+
+/* ══════════════════════════════════════════════════
+   DASHBOARD
+══════════════════════════════════════════════════ */
+async function loadDashboard() {
+  const d = await api('/dashboard');
+  if (!d) { loadDemoData(); return; }
+  dashData = d;
+  applyKPIs(d.kpis);
+  buildHourlyChart(d.hourly);
+  buildDonutChart();
+  buildZoneBars(d.routes);
+  buildRecentTable(d.recent);
+  renderMap('mapMain', livePositions.length ? livePositions : demoPositions(), 280);
+  $('dashSubtitle').textContent = `${new Date().toLocaleString('en-IN',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',hour12:false})} · ${d.kpis.total} orders today`;
+  populateZoneFilter(d.routes);
+}
+
+function loadDemoData() {
+  applyKPIs({total:247,delivered:189,transit:38,delayed:12,pending:8,on_time_rate:84.6,avg_time:36.4,mae:3.5,revenue:24610});
+  buildHourlyChart(Array.from({length:15},(_,i)=>({h:i+7,total:Math.floor(Math.random()*45+8),delayed:Math.floor(Math.random()*7)})));
+  buildDonutChart();
+  buildZoneBars(DEMO_ZONES);
+  buildRecentTable(demoRecent());
+  renderMap('mapMain', demoPositions(), 280);
+  $('dashSubtitle').textContent = `Demo mode · live data available when backend is running`;
+  populateZoneFilter(DEMO_ZONES);
+}
+
+function applyKPIs(k) {
+  if (!k) return;
+  $('kv1').textContent = k.total||0;
+  $('kv2').textContent = k.delivered||0;
+  $('kv3').textContent = k.transit||0;
+  $('kv4').textContent = k.delayed||0;
+  $('kv5').textContent = (k.on_time_rate||0)+'%';
+  $('kt2').textContent = `${k.delivered||0} pkgs`;
+  $('kt5').textContent = (k.on_time_rate>=85)?'🎯 On target':'Below target';
+  $('kt5').className = 'kpi-trend '+(k.on_time_rate>=85?'trend-up':'trend-dn');
+  $('navBadge').textContent = k.transit||0;
+  if (k.mae) { $('sbMae').textContent = `±${k.mae} min` }
+}
+
+/* ══════════════════════════════════════════════════
+   CHARTS
+══════════════════════════════════════════════════ */
+let chartH=null, chartD=null;
+
+function buildHourlyChart(data) {
+  if (!data||!data.length) return;
+  const labels = data.map(d=>`${(d.h||d.hour||0).toString().padStart(2,'0')}:00`);
+  const totals  = data.map(d=>d.total||0);
+  const delayed = data.map(d=>d.delayed||0);
+  if (chartH) chartH.destroy();
+  chartH = new Chart($('cHourly'), {
+    type:'bar',
+    data:{labels, datasets:[
+      {label:'Deliveries',data:totals,backgroundColor:'rgba(59,127,255,.75)',borderRadius:5,borderSkipped:false},
+      {label:'Delayed',data:delayed,backgroundColor:'rgba(245,61,61,.7)',borderRadius:5,borderSkipped:false}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.raw}`}}},
+      scales:{
+        x:{grid:{color:'rgba(0,0,0,.04)'},ticks:{color:'#8896A9',font:{size:10}},border:{display:false}},
+        y:{grid:{color:'rgba(0,0,0,.04)'},ticks:{color:'#8896A9',font:{size:11}},border:{display:false}}
+      }}
+  });
+}
+
+function buildDonutChart() {
+  const labels=['Delivered','In Transit','Delayed','Pending'];
+  const data=[62,20,9,9];
+  const colors=['#00C48C','#3B7FFF','#F53D3D','#FFB020'];
+  $('statusLegend').innerHTML = labels.map((l,i)=>`
+    <span style="display:flex;align-items:center;gap:5px">
+      <span style="width:9px;height:9px;border-radius:3px;background:${colors[i]}"></span>
+      <span style="color:var(--ink2)">${l}</span><span style="color:var(--ink3)">${data[i]}%</span>
+    </span>`).join('');
+  if (chartD) chartD.destroy();
+  chartD = new Chart($('cDonut'), {
+    type:'doughnut',
+    data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:3,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'70%',
+      plugins:{legend:{display:false}}}
+  });
+}
+
+function buildZoneBars(zones) {
+  if (!zones||!zones.length) return;
+  const max = Math.max(...zones.map(z=>z.avg_time||50));
+  const colors = ['#3B7FFF','#00C48C','#3B7FFF','#3B7FFF','#FFB020','#FFB020','#F53D3D','#F53D3D','#F53D3D','#F53D3D'];
+  $('zoneBars').innerHTML = zones.slice(0,8).map((z,i)=>{
+    const t = z.avg_time||35;
+    const pct = Math.round((t/max)*100);
+    const c = t<35?'#00C48C':t<45?'#FFB020':'#F53D3D';
+    return `<div class="zone-bar-row">
+      <div class="zone-bar-hd">
+        <span class="zone-bar-nm">${z.zone}</span>
+        <span class="zone-bar-val" style="color:${c}">${t} min</span>
+      </div>
+      <div class="zone-track"><div class="zone-fill" style="width:${pct}%;background:${c}"></div></div>
+    </div>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════════════════
+   TABLE
+══════════════════════════════════════════════════ */
+function buildRecentTable(rows) {
+  if (!rows||!rows.length) { $('tbRecent').innerHTML='<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--ink3)">No data</td></tr>'; return; }
+  $('tbRecent').innerHTML = rows.map(r=>`
+    <tr style="cursor:pointer" onclick="openModal('${r.id}')">
+      <td><span class="tid">${r.id}</span></td>
+      <td><b style="color:var(--ink)">${r.customer_name}</b></td>
+      <td style="color:var(--ink3)">${r.zone}</td>
+      <td>${r.driver_name||'—'}</td>
+      <td>${parseFloat(r.distance_km).toFixed(1)} km</td>
+      <td><span style="font-family:var(--mono);font-size:12px">${Math.round(r.predicted_mins||0)} min</span></td>
+      <td>${statusBadge(r.status)}</td>
+      <td>${priorityBadge(r.priority)}</td>
+    </tr>`).join('');
+}
+
+const statusBadge = s => {
+  const m={DELIVERED:'b-delivered',OUT_FOR_DELIVERY:'b-transit',DELAYED:'b-delayed',
+           PENDING:'b-pending',CANCELLED:'b-cancelled',PICKED_UP:'b-transit'};
+  const l={DELIVERED:'✓ Delivered',OUT_FOR_DELIVERY:'↑ In Transit',DELAYED:'⚠ Delayed',
+           PENDING:'· Pending',CANCELLED:'✕ Cancelled',PICKED_UP:'📦 Picked Up'};
+  return `<span class="badge ${m[s]||'b-pending'}">${l[s]||s}</span>`;
+};
+const priorityBadge = p => {
+  const m={NORMAL:'b-normal',EXPRESS:'b-express',SAME_DAY:'b-sameday'};
+  const l={NORMAL:'Normal',EXPRESS:'⚡ Express',SAME_DAY:'🚀 Same Day'};
+  return `<span class="badge ${m[p]||'b-normal'}">${l[p]||p}</span>`;
+};
+
+/* ══════════════════════════════════════════════════
+   CANVAS MAP
+══════════════════════════════════════════════════ */
+const DEPOT = {lat:17.3850, lng:78.4867};
+const ZONE_COORDS = {
+  "Banjara Hills":[17.4156,78.4347],"Kondapur":[17.460,78.3615],
+  "Gachibowli":[17.4401,78.3489],"HITEC City":[17.4474,78.3762],
+  "Madhapur":[17.4486,78.3908],"Kukatpally":[17.4849,78.3996],
+  "Ameerpet":[17.4374,78.4478],"Jubilee Hills":[17.4316,78.4077],
+  "Secunderabad":[17.4399,78.4983],"Dilsukhnagar":[17.3688,78.5247],
+  "LB Nagar":[17.3474,78.554],"Miyapur":[17.495,78.3516],
+  "Uppal":[17.4007,78.5591],"Manikonda":[17.4045,78.3892],
+  "Nallagandla":[17.4623,78.3162],
+};
+
+function demoPositions() {
+  const t = Date.now()/1000;
+  return Array.from({length:12},(_,i)=>{
+    const [tlat,tlng] = Object.values(ZONE_COORDS)[i%15];
+    const prog = (Math.sin(t*0.3+i*0.7)+1)/2;
+    return {
+      id:`RT${10000+i}`, driver:`Driver ${i+1}`,
+      lat: DEPOT.lat+(tlat-DEPOT.lat)*prog+Math.sin(t*1.1+i)*0.003,
+      lng: DEPOT.lng+(tlng-DEPOT.lng)*prog+Math.cos(t*0.9+i)*0.003,
+      status:['moving','moving','moving','delivered','delayed'][i%5],
+      eta:`${Math.max(2,Math.round(25*(1-prog)))} min`,
+      zone:Object.keys(ZONE_COORDS)[i%15],
+      speed:Math.round(20+Math.random()*18),
+    };
+  });
+}
+
+function renderMap(canvasId, positions, height=280) {
+  const canvas = $(canvasId);
+  if (!canvas) return;
+  const dpr = window.devicePixelRatio||1;
+  canvas.style.height = height+'px';
+  const W = canvas.clientWidth||700;
+  canvas.width  = W * dpr;
+  canvas.height = height * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  // Background — styled like a light map
+  ctx.fillStyle = '#EBF0F8';
+  ctx.fillRect(0,0,W,height);
+
+  // Road grid (simulated streets)
+  ctx.strokeStyle = 'rgba(255,255,255,.9)';
+  ctx.lineWidth = 2;
+  for (let x=0; x<W; x+=55) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,height); ctx.stroke(); }
+  for (let y=0; y<height; y+=45) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+  // Major roads
+  ctx.strokeStyle = 'rgba(255,255,255,1)';
+  ctx.lineWidth = 5;
+  [[0,height*0.45,W,height*0.45],[W*0.35,0,W*0.35,height],[W*0.68,0,W*0.68,height]].forEach(([x1,y1,x2,y2])=>{
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+  });
+
+  // Park areas
+  ctx.fillStyle = 'rgba(200,230,200,.5)';
+  ctx.beginPath();ctx.ellipse(W*0.2,height*0.3,50,35,0,0,Math.PI*2);ctx.fill();
+  ctx.beginPath();ctx.ellipse(W*0.75,height*0.65,40,28,0,0,Math.PI*2);ctx.fill();
+
+  if (!positions||!positions.length) return;
+
+  // Calculate map bounds
+  const allLats = positions.map(p=>p.lat).concat([DEPOT.lat]);
+  const allLngs = positions.map(p=>p.lng).concat([DEPOT.lng]);
+  const latMin = Math.min(...allLats)-0.03, latMax = Math.max(...allLats)+0.03;
+  const lngMin = Math.min(...allLngs)-0.03, lngMax = Math.max(...allLngs)+0.03;
+  const toX = lng => ((lng-lngMin)/(lngMax-lngMin))*(W-60)+30;
+  const toY = lat => height-30-((lat-latMin)/(latMax-latMin))*(height-60);
+
+  const DX = toX(DEPOT.lng), DY = toY(DEPOT.lat);
+
+  // Route lines from depot
+  positions.forEach(p => {
+    const px=toX(p.lng), py=toY(p.lat);
+    ctx.beginPath();
+    ctx.strokeStyle = p.status==='delayed'?'rgba(245,61,61,.15)':'rgba(59,127,255,.1)';
+    ctx.lineWidth=1.5; ctx.setLineDash([4,6]);
+    ctx.moveTo(DX,DY); ctx.lineTo(px,py); ctx.stroke(); ctx.setLineDash([]);
+  });
+
+  // Rider dots
+  positions.forEach(p => {
+    const px=toX(p.lng), py=toY(p.lat);
+    const color = p.status==='delivered'?'#00C48C':p.status==='delayed'?'#F53D3D':'#3B7FFF';
+
+    // Pulse ring for active
+    if (p.status==='moving') {
+      ctx.beginPath();ctx.arc(px,py,10,0,Math.PI*2);
+      ctx.fillStyle=color+'22';ctx.fill();
+    }
+    // Shadow
+    ctx.beginPath();ctx.arc(px,py,7,0,Math.PI*2);
+    ctx.fillStyle='rgba(0,0,0,.12)';ctx.fill();
+    // Dot
+    ctx.beginPath();ctx.arc(px,py,6,0,Math.PI*2);
+    ctx.fillStyle=color;ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+
+    // ETA label on hover-ish (show for delayed)
+    if (p.status==='delayed') {
+      ctx.fillStyle='#F53D3D';
+      ctx.fillRect(px-14,py-24,28,14);
+      ctx.fillStyle='#fff';ctx.font='bold 9px sans-serif';ctx.textAlign='center';
+      ctx.fillText('LATE',px,py-14);
+    }
+  });
+
+  // Depot marker
+  ctx.beginPath();ctx.arc(DX,DY,14,0,Math.PI*2);
+  ctx.fillStyle='rgba(255,75,0,.15)';ctx.fill();
+  ctx.beginPath();ctx.arc(DX,DY,10,0,Math.PI*2);
+  ctx.fillStyle='#FF4B00';ctx.fill();
+  ctx.strokeStyle='#fff';ctx.lineWidth=2.5;ctx.stroke();
+  ctx.fillStyle='#fff';ctx.font='bold 11px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('H',DX,DY);
+
+  // Zone label overlays
+  Object.entries(ZONE_COORDS).forEach(([name,[lat,lng]])=>{
+    const x=toX(lng), y=toY(lat);
+    if(x<30||x>W-30||y<15||y>height-15) return;
+    ctx.font='600 9px Plus Jakarta Sans,sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillStyle='rgba(15,23,40,.45)';
+    ctx.fillText(name,x,y+18);
+  });
+
+  // Update fleet count display
+  const moving = positions.filter(p=>p.status==='moving').length;
+  const fleetEl = $('fleetCount');
+  if (fleetEl) fleetEl.textContent = `${moving} riders moving`;
+}
+
+/* ══════════════════════════════════════════════════
+   WEBSOCKET
+══════════════════════════════════════════════════ */
+function connectWS() {
+  try {
+    ws = new WebSocket(WS_URL);
+    ws.onopen  = () => toast('success','Connected to live data stream');
+    ws.onmessage = e => {
+      const d = JSON.parse(e.data);
+      if (d.type==='snapshot') { dashData=d.data; applyKPIs(d.data.kpis); }
+      if (d.type==='live') {
+        livePositions = d.positions||[];
+        if (d.kpis) applyKPIs(d.kpis);
+        if ($('page-dashboard').classList.contains('active'))
+          renderMap('mapMain', livePositions, 280);
+        if ($('page-map').classList.contains('active'))
+          renderMap('mapFull', livePositions, 500);
+        updateMapRiderList(livePositions);
+        if (d.alert) toast(d.alert[0], d.alert[1]);
+      }
+      if (d.type==='delivery_update') toast('info',`📦 ${d.id} → ${d.status}`);
+    };
+    ws.onerror = ws.onclose = () => {
+      setTimeout(()=>{ livePositions = demoPositions(); renderMap('mapMain',livePositions,280); }, 500);
+    };
+  } catch { livePositions = demoPositions(); }
+}
+
+/* ══════════════════════════════════════════════════
+   DELIVERIES PAGE
+══════════════════════════════════════════════════ */
+async function loadDeliveries(page=1) {
+  delivPage = page;
+  const status   = $('fStatus').value;
+  const zone     = $('fZone').value;
+  const priority = $('fPriority').value;
+  let url = `/deliveries?page=${page}&limit=15`;
+  if(status)   url+=`&status=${status}`;
+  if(zone)     url+=`&zone=${encodeURIComponent(zone)}`;
+  if(priority) url+=`&priority=${priority}`;
+  const d = await api(url);
+  const rows  = d?.data  || demoRecent();
+  const total = d?.total || rows.length;
+  const pages = d?.pages || 1;
+
+  $('delivTableWrap').innerHTML = `
+    <table>
+      <thead><tr>
+        <th>Order ID</th><th>Customer</th><th>Zone</th><th>Driver</th>
+        <th>Vehicle</th><th>Distance</th><th>ETA</th><th>Status</th>
+        <th>Priority</th><th>Ordered At</th>
+      </tr></thead>
+      <tbody>${rows.map(r=>`
+        <tr style="cursor:pointer" onclick="openModal('${r.id}')">
+          <td><span class="tid">${r.id}</span></td>
+          <td><b style="color:var(--ink)">${r.customer_name}</b></td>
+          <td style="color:var(--ink3)">${r.zone}</td>
+          <td>${r.driver_name||'—'}</td>
+          <td><span style="color:var(--ink3);font-size:12px">${r.vehicle_type||'Bike'}</span></td>
+          <td>${parseFloat(r.distance_km).toFixed(1)} km</td>
+          <td><span style="font-family:var(--mono);font-size:12px">${Math.round(r.predicted_mins||0)} min</span></td>
+          <td>${statusBadge(r.status)}</td>
+          <td>${priorityBadge(r.priority)}</td>
+          <td style="color:var(--ink3);font-size:11px;font-family:var(--mono)">${fmtTime(r.order_time)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+
+  // Pagination
+  const pg = $('pagination');
+  pg.innerHTML = `<span>${total} orders</span>`;
+  if (pages>1) {
+    pg.innerHTML += ` &nbsp; `;
+    for (let i=1;i<=Math.min(pages,8);i++) {
+      pg.innerHTML += `<button onclick="loadDeliveries(${i})" style="padding:4px 10px;border-radius:6px;border:1.5px solid ${i===page?'var(--brand)':'var(--border)'};background:${i===page?'var(--brand-lt)':'var(--surface)'};color:${i===page?'var(--brand)':'var(--ink3)'};font-family:var(--font);cursor:pointer;margin:0 2px">${i}</button>`;
+    }
+  }
+}
+
+function populateZoneFilter(zones) {
+  const sel = $('fZone');
+  if (!sel||sel.options.length>1) return;
+  (zones||DEMO_ZONES).forEach(z=>{
+    const o=document.createElement('option'); o.textContent=o.value=z.zone; sel.appendChild(o);
+  });
+}
+
+/* ══════════════════════════════════════════════════
+   MODAL
+══════════════════════════════════════════════════ */
+async function openModal(did) {
+  $('modal').style.display='flex';
+  $('modalTitle').textContent = `Order ${did}`;
+  $('modalSub').textContent   = 'Loading details…';
+  $('modalBody').innerHTML    = '<div style="padding:30px;text-align:center;color:var(--ink3)">Loading…</div>';
+
+  const d = await api(`/deliveries/${did}`);
+  if (!d) { $('modalBody').innerHTML='<div style="padding:30px;text-align:center;color:var(--red)">Not found</div>'; return; }
+
+  $('modalSub').innerHTML = `${statusBadge(d.status)} &nbsp; ${priorityBadge(d.priority)}`;
+  const tl = (d.timeline||[]).map(e=>`
+    <div class="tl-item">
+      <div class="tl-dot done">✓</div>
+      <div class="tl-content">
+        <div class="tl-title">${e.status.replace(/_/g,' ')}</div>
+        <div class="tl-time">${fmtTime(e.ts)}</div>
+      </div>
+    </div>`).join('');
+
+  $('modalBody').innerHTML = `
+    <div class="modal-grid">
+      <div class="mg-item"><div class="mg-label">Customer</div><div class="mg-val">${d.customer_name}</div></div>
+      <div class="mg-item"><div class="mg-label">Phone</div><div class="mg-val">${d.customer_phone||'—'}</div></div>
+      <div class="mg-item"><div class="mg-label">Zone</div><div class="mg-val">${d.zone}</div></div>
+      <div class="mg-item"><div class="mg-label">Distance</div><div class="mg-val">${parseFloat(d.distance_km).toFixed(1)} km</div></div>
+      <div class="mg-item"><div class="mg-label">Predicted ETA</div><div class="mg-val">${Math.round(d.predicted_mins||0)} min</div></div>
+      <div class="mg-item"><div class="mg-label">Actual Time</div><div class="mg-val">${d.actual_mins?Math.round(d.actual_mins)+' min':'In progress'}</div></div>
+      <div class="mg-item"><div class="mg-label">Driver</div><div class="mg-val">${d.driver_name||'—'}</div></div>
+      <div class="mg-item"><div class="mg-label">Vehicle</div><div class="mg-val">${d.vehicle_type}</div></div>
+      <div class="mg-item" style="grid-column:1/-1"><div class="mg-label">Address</div><div class="mg-val">${d.address}</div></div>
+    </div>
+    ${tl?`<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:14px">Delivery Timeline</div><div class="timeline">${tl}</div>`:''}`;
+}
+function closeModal() { $('modal').style.display='none'; }
+
+/* ══════════════════════════════════════════════════
+   PREDICT
+══════════════════════════════════════════════════ */
+async function runPrediction() {
+  const body = {
+    distance_km:   parseFloat($('pd_dist').value),
+    weight_kg:     parseFloat($('pd_wt').value),
+    traffic_level: parseInt($('pd_traffic').value),
+    weather:       parseInt($('pd_weather').value),
+    vehicle_type:  $('pd_vehicle').value,
+    priority:      $('pd_priority').value,
+    hour:          parseInt($('pd_hour').value),
+    experience:    parseFloat($('pd_exp').value),
+    is_cod:        $('pd_cod').checked?1:0,
+    is_fragile:    $('pd_fragile').checked?1:0,
+    road_quality:  7,
+    prior_stops:   2,
+  };
+  let r = await api('/predict', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if (!r) {
+    const base = body.distance_km*5.5+body.traffic_level*9+body.weather*5;
+    r = {predicted_minutes:Math.round(base+Math.random()*6), range_min:Math.round(base-10), range_max:Math.round(base+12),
+         confidence:'high', category:'🕐 Standard', factors:[], eta_display:Math.round(base)+' min',
+         model_metrics:{mae:3.49,accuracy_15min:82}};
+  }
+  renderResult(r);
+  toast('success',`ETA predicted: ${r.eta_display||r.predicted_minutes+' min'}`);
+}
+
+function renderResult(r) {
+  const mins = Math.round(r.predicted_minutes||30);
+  const confPct = r.confidence==='high'?82:55;
+  const factors = (r.factors||[]).map(f=>`
+    <div class="factor-item">
+      <span class="factor-nm">${f.icon||''} ${f.name}</span>
+      <span class="factor-impact ${f.severity}">${f.impact}</span>
+    </div>`).join('');
+
+  $('resultCard').innerHTML = `
+    <div class="result-top">
+      <div>
+        <div class="result-label">PREDICTED DELIVERY TIME</div>
+        <div class="result-eta">${r.eta_display||mins+' min'}</div>
+        <div class="result-range">Range: ${r.range_min||'—'}–${r.range_max||'—'} min</div>
+      </div>
+      <div class="result-cat" style="background:${mins<30?'#00C48C':mins<60?'#3B7FFF':'#FFB020'};color:#fff">${r.category||'Standard'}</div>
+    </div>
+    <div class="conf-wrap">
+      <div class="conf-label"><span>Model Confidence</span><span>${r.confidence||'high'} — ${r.model_metrics?.accuracy_15min||82}% acc</span></div>
+      <div class="conf-track"><div class="conf-fill" style="width:${confPct}%"></div></div>
+    </div>
+    ${factors?`<div style="display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.8px;color:rgba(255,255,255,.4);margin-bottom:2px">DELAY FACTORS</div>
+      ${factors}
+    </div>`:'<div style="color:rgba(255,255,255,.3);font-size:12px;text-align:center;padding:8px 0">No significant delay factors detected ✓</div>'}
+    <div style="border-top:1px solid rgba(255,255,255,.1);padding-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div style="background:rgba(255,255,255,.06);border-radius:8px;padding:10px 12px;text-align:center">
+        <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:4px">MODEL MAE</div>
+        <div style="font-family:var(--mono);font-size:16px;font-weight:700;color:var(--green)">±${r.model_metrics?.mae||3.5} min</div>
+      </div>
+      <div style="background:rgba(255,255,255,.06);border-radius:8px;padding:10px 12px;text-align:center">
+        <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:4px">ACCURACY</div>
+        <div style="font-family:var(--mono);font-size:16px;font-weight:700;color:var(--green)">${r.model_metrics?.accuracy_15min||82}%</div>
+      </div>
+    </div>`;
+}
+
+async function loadBatchScenarios() {
+  const scenarios = await api('/predict/batch-demo');
+  const list = scenarios || [
+    {scenario:'Morning rush, short',predicted_minutes:28,eta_display:'28 min',category:'🕐 Standard'},
+    {scenario:'Rainy evening, long',predicted_minutes:84,eta_display:'1h 24m',category:'🕓 Extended'},
+    {scenario:'Clear noon, medium',predicted_minutes:42,eta_display:'42 min',category:'🕐 Standard'},
+    {scenario:'Night express',predicted_minutes:22,eta_display:'22 min',category:'⚡ Express'},
+  ];
+  $('batchScenarios').innerHTML = list.map(s=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--surface2);border-radius:10px;cursor:pointer;border:1.5px solid transparent;transition:all .15s"
+         onmouseover="this.style.borderColor='var(--brand)'" onmouseout="this.style.borderColor='transparent'">
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--ink)">${s.scenario}</div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:2px">${s.category||''}</div>
+      </div>
+      <div style="font-family:var(--mono);font-size:16px;font-weight:700;color:var(--brand)">${s.eta_display||s.predicted_minutes+' min'}</div>
+    </div>`).join('');
+}
+
+/* ══════════════════════════════════════════════════
+   ANALYTICS
+══════════════════════════════════════════════════ */
+function buildAnalytics() {
+  if (analyticsBuilt) return;
+  analyticsBuilt = true;
+  const routes = dashData?.routes || DEMO_ZONES;
+  const sorted = [...routes].sort((a,b)=>(a.avg_time||35)-(b.avg_time||35));
+
+  // Zone bar chart
+  new Chart($('cZone'),{
+    type:'bar',
+    data:{labels:sorted.map(z=>z.zone),datasets:[{
+      label:'Avg Time (min)', data:sorted.map(z=>z.avg_time||35),
+      backgroundColor:sorted.map(z=>z.avg_time<35?'#00C48C':z.avg_time<45?'#3B7FFF':'#F53D3D'),
+      borderRadius:5,borderSkipped:false
+    }]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{color:'rgba(0,0,0,.04)'},ticks:{color:'#8896A9',font:{size:10}},border:{display:false}},
+        y:{grid:{display:false},ticks:{color:'#4A5568',font:{size:11}},border:{display:false}}
+      }}
+  });
+
+  // Delay rate
+  new Chart($('cDelay'),{
+    type:'bar',
+    data:{labels:routes.map(z=>z.zone.split(' ')[0]),datasets:[{
+      label:'Delay %', data:routes.map(z=>z.delay_rate||0),
+      backgroundColor:'rgba(245,61,61,.7)',borderRadius:5,borderSkipped:false
+    }]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{display:false},ticks:{color:'#8896A9',font:{size:10},maxRotation:40},border:{display:false}},
+        y:{grid:{color:'rgba(0,0,0,.04)'},ticks:{color:'#8896A9'},border:{display:false}}
+      }}
+  });
+
+  // Weekly trend
+  const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const vol=[42,58,51,67,61,79,48];
+  const times=[34,33,37,41,36,29,43];
+  new Chart($('cWeekly'),{
+    type:'bar',
+    data:{labels:days,datasets:[
+      {type:'bar',label:'Deliveries',data:vol,backgroundColor:'rgba(59,127,255,.5)',borderRadius:4,yAxisID:'y'},
+      {type:'line',label:'Avg Time',data:times,borderColor:'#FF4B00',backgroundColor:'rgba(255,75,0,.1)',
+       tension:.4,pointRadius:5,pointBackgroundColor:'#FF4B00',borderWidth:2.5,fill:true,yAxisID:'y1'}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        y:{grid:{color:'rgba(0,0,0,.04)'},ticks:{color:'#8896A9',font:{size:11}},border:{display:false}},
+        y1:{position:'right',grid:{display:false},ticks:{color:'#FF4B00',font:{size:11}},border:{display:false}},
+        x:{grid:{display:false},ticks:{color:'#8896A9'},border:{display:false}}
+      }}
+  });
+
+  // Vehicle donut
+  const vc=['Bike','Scooter','Van','Electric Bike'];
+  const vv=[45,30,18,7];
+  const vClr=['#3B7FFF','#00C48C','#FFB020','#7C5CBF'];
+  $('vehicleLegend').innerHTML = vc.map((v,i)=>`<span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:${vClr[i]}"></span><span style="color:var(--ink2)">${v} ${vv[i]}%</span></span>`).join('');
+  new Chart($('cVehicle'),{type:'doughnut',
+    data:{labels:vc,datasets:[{data:vv,backgroundColor:vClr,borderWidth:3,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false}}}
+  });
+
+  // Priority bar
+  const pc=['Normal','Express','Same-Day'];
+  const pv=[60,30,10];
+  const pClr=['#8896A9','#7C5CBF','#FF4B00'];
+  $('priorityLegend').innerHTML = pc.map((p,i)=>`<span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:${pClr[i]}"></span><span style="color:var(--ink2)">${p} ${pv[i]}%</span></span>`).join('');
+  new Chart($('cPriority'),{type:'doughnut',
+    data:{labels:pc,datasets:[{data:pv,backgroundColor:pClr,borderWidth:3,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false}}}
+  });
+}
+
+/* ══════════════════════════════════════════════════
+   MAP PAGE
+══════════════════════════════════════════════════ */
+function startMapPage() {
+  const pos = livePositions.length ? livePositions : demoPositions();
+  renderMap('mapFull', pos, 500);
+  updateMapRiderList(pos);
+  $('mapRiderCount').textContent = `${pos.filter(p=>p.status==='moving').length} riders active`;
+
+  // Stat cards
+  $('mapStatCards').innerHTML = [
+    {l:'Moving',v:pos.filter(p=>p.status==='moving').length,c:'#3B7FFF',i:'🛵'},
+    {l:'Delivered',v:pos.filter(p=>p.status==='delivered').length,c:'#00C48C',i:'✅'},
+    {l:'Delayed',v:pos.filter(p=>p.status==='delayed').length,c:'#F53D3D',i:'⚠️'},
+    {l:'Avg Speed',v:Math.round(pos.reduce((s,p)=>s+(p.speed||25),0)/pos.length)+' km/h',c:'#FFB020',i:'⚡'},
+  ].map(s=>`
+    <div class="card" style="text-align:center;padding:16px">
+      <div style="font-size:24px;margin-bottom:6px">${s.i}</div>
+      <div style="font-size:26px;font-weight:800;color:${s.c};font-family:var(--mono)">${s.v}</div>
+      <div style="font-size:12px;color:var(--ink3);margin-top:3px">${s.l}</div>
+    </div>`).join('');
+}
+
+function updateMapRiderList(pos) {
+  const el = $('mapRiderList');
+  if (!el) return;
+  el.innerHTML = (pos||[]).map(p=>`
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px;cursor:pointer"
+         onclick="toast('info','${p.driver} · ${p.zone} · ETA ${p.eta}')">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:12px;font-weight:700;color:var(--ink)">${p.driver||p.id}</span>
+        ${p.status==='moving'?'<span class="badge b-transit">↑ Moving</span>':p.status==='delayed'?'<span class="badge b-delayed">⚠ Late</span>':'<span class="badge b-delivered">✓ Done</span>'}
+      </div>
+      <div style="font-size:11px;color:var(--ink3)">${p.zone||'—'} · ETA <b style="color:var(--brand)">${p.eta}</b></div>
+      <div style="font-size:11px;color:var(--ink3);margin-top:3px">Speed: ${p.speed||'—'} km/h</div>
+    </div>`).join('');
+}
+
+/* ══════════════════════════════════════════════════
+   DRIVERS PAGE
+══════════════════════════════════════════════════ */
+async function buildDriverPage() {
+  const drivers = await api('/drivers') || demoDrivers();
+  const colors = ['#FFB020','#8896A9','#CD7F32','#3B7FFF','#7C5CBF'];
+  $('driverList').innerHTML = drivers.slice(0,10).map((d,i)=>`
+    <div class="driver-card">
+      <div class="driver-av" style="background:${colors[i]||'var(--surface2)'}22;color:${colors[i]||'var(--ink3)'}">
+        ${i<3?['🥇','🥈','🥉'][i]:`#${i+1}`}
+      </div>
+      <div>
+        <div class="driver-nm">${d.name}</div>
+        <div class="driver-meta">${d.total_deliveries} total · ${d.vehicle_type||'Bike'} · ${d.avg_time_mins||'—'} min avg</div>
+      </div>
+      <div class="driver-right">
+        <div class="driver-rate" style="color:${d.on_time_rate>=85?'var(--green)':d.on_time_rate>=70?'var(--amber)':'var(--red)'}">
+          ${parseFloat(d.on_time_rate||0).toFixed(1)}%
+        </div>
+        <div class="driver-stars">${'★'.repeat(Math.round(d.rating||4))}${'☆'.repeat(5-Math.round(d.rating||4))}</div>
+        <div class="driver-badge" style="background:${d.status==='ON_DELIVERY'?'var(--blue-lt)':'var(--green-lt)'};color:${d.status==='ON_DELIVERY'?'var(--blue)':'var(--green)'}">
+          ${d.status==='ON_DELIVERY'?'On delivery':'Available'}
+        </div>
+      </div>
+    </div>`).join('');
+
+  // Scatter plot
+  new Chart($('cDrivers'),{
+    type:'scatter',
+    data:{datasets:[{
+      data:drivers.map(d=>({x:parseFloat(d.avg_time_mins||35),y:parseFloat(d.on_time_rate||75)})),
+      backgroundColor:'rgba(59,127,255,.7)',borderColor:'#3B7FFF',pointRadius:7,
+    }]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:c=>`Avg: ${c.raw.x}min | On-time: ${c.raw.y}%`}}},
+      scales:{
+        x:{title:{display:true,text:'Avg Delivery Time (min)',color:'#8896A9',font:{size:11}},
+           grid:{color:'rgba(0,0,0,.04)'},ticks:{color:'#8896A9'},border:{display:false}},
+        y:{title:{display:true,text:'On-Time Rate (%)',color:'#8896A9',font:{size:11}},
+           grid:{color:'rgba(0,0,0,.04)'},ticks:{color:'#8896A9'},border:{display:false}}
+      }}
+  });
+}
+
+/* ══════════════════════════════════════════════════
+   SEARCH
+══════════════════════════════════════════════════ */
+let searchTimer;
+function handleSearch(val) {
+  clearTimeout(searchTimer);
+  if (!val.trim()) return;
+  searchTimer = setTimeout(async ()=>{
+    const d = await api(`/deliveries?search=${encodeURIComponent(val)}`);
+    if (d?.data?.length) {
+      navClick(document.querySelector('[data-page=deliveries]'),'deliveries');
+      buildRecentTable(d.data.slice(0,6));
+    }
+  }, 400);
+}
+
+/* ══════════════════════════════════════════════════
+   NEW ORDER
+══════════════════════════════════════════════════ */
+async function openNewDelivery() {
+  navClick(document.querySelector('[data-page=predict]'),'predict');
+  toast('info','Fill in the form to create a new delivery order');
+}
+
+/* ══════════════════════════════════════════════════
+   DEMO DATA
+══════════════════════════════════════════════════ */
+function demoRecent() {
+  const zones=Object.keys(ZONE_COORDS);
+  const drivers=["Ravi K","Suresh B","Arjun R","Venkat R","Prasad M","Kiran B","Naresh G"];
+  const statuses=["DELIVERED","OUT_FOR_DELIVERY","DELAYED","PENDING","DELIVERED","DELIVERED","OUT_FOR_DELIVERY","DELIVERED","DELAYED","PENDING","DELIVERED","DELIVERED"];
+  return Array.from({length:12},(_,i)=>({
+    id:`RT${10000+i}`, customer_name:`Customer ${i+1}`,
+    zone:zones[i%zones.length], driver_name:drivers[i%drivers.length],
+    distance_km:(Math.random()*15+1.5).toFixed(1),
+    predicted_mins:Math.floor(Math.random()*45+15),
+    status:statuses[i], priority:['NORMAL','EXPRESS','NORMAL','SAME_DAY'][i%4],
+    vehicle_type:['Bike','Scooter','Van','Electric Bike'][i%4],
+    order_time:new Date(Date.now()-i*1800000).toISOString()
+  }));
+}
+
+function demoDrivers() {
+  return Array.from({length:10},(_,i)=>({
+    name:["Ravi K","Suresh B","Arjun R","Venkat R","Prasad M","Kiran B","Naresh G","Sai T","Ramesh K","Deepak S"][i],
+    total_deliveries:Math.floor(Math.random()*600+150),
+    on_time_rate:(Math.random()*28+64).toFixed(1),
+    avg_time_mins:(Math.random()*25+22).toFixed(1),
+    rating:(Math.random()*1.2+3.7).toFixed(1),
+    vehicle_type:['Bike','Scooter','Van','Electric Bike'][i%4],
+    status:i<5?'ON_DELIVERY':'AVAILABLE'
+  }));
+}
+
+function fmtTime(ts) {
+  if (!ts) return '—';
+  try {
+    return new Date(ts).toLocaleString('en-IN',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false});
+  } catch { return '—'; }
+}
+
+/* ══════════════════════════════════════════════════
+   MAP ANIMATION LOOP
+══════════════════════════════════════════════════ */
+let mapTick = 0;
+function mapAnimLoop() {
+  mapTick++;
+  if (!livePositions.length) livePositions = demoPositions();
+  if ($('page-dashboard').classList.contains('active'))
+    renderMap('mapMain', livePositions, 280);
+  if ($('page-map').classList.contains('active'))
+    renderMap('mapFull', livePositions, 500);
+}
+setInterval(mapAnimLoop, 2500);
+
+// Animate zone bars after render
+setTimeout(()=>{
+  document.querySelectorAll('.zone-fill').forEach(el => {
+    const w = el.style.width;
+    el.style.width = '0';
+    requestAnimationFrame(()=>{ el.style.width = w; });
+  });
+}, 200);
+
+/* ══════════════════════════════════════════════════
+   BOOT
+══════════════════════════════════════════════════ */
+loadDashboard();
+connectWS();
+loadBatchScenarios();
+</script>
+</body>
+</html>
