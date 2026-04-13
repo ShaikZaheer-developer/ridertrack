@@ -310,7 +310,7 @@ setInterval(() => {
 
 ---
 
-## 🚀 Deployment
+## Deployment
 
 ### Option A: Localhost (for portfolio demo)
 ```bash
