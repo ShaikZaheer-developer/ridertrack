@@ -335,7 +335,7 @@ CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
 ---
 
-## 📊 Resume Bullets
+## 📊 Project Bullets
 
 > **RiderTrack — Last-Mile Delivery Intelligence Platform**
 > Python · FastAPI · SQLite · Scikit-learn · WebSocket · HTML/CSS/JS
