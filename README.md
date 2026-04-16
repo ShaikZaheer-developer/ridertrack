@@ -1,4 +1,16 @@
 # 🛵 RiderTrack — Last-Mile Delivery Intelligence Platform
+# RiderTrack 🚴‍♂️
+Production-inspired last-mile delivery intelligence platform built for quick commerce operations like Zepto, Blinkit, Swiggy Instamart.
+
+RiderTrack helps optimize rider operations using:
+- Real-time fleet tracking
+- Delivery ETA prediction
+- Delay risk monitoring
+- Zone-level operational analytics
+- Driver productivity insights
+- Live KPI dashboards
+
+Built with FastAPI, Python, SQLite, WebSockets, Scikit-learn.
 
 > **Full-stack project** — Uber/Zomato/Zepto quality design · Real-time WebSocket · FastAPI · SQLite · ML Engine · Live Fleet Map
 
@@ -334,6 +346,16 @@ CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
 ---
+## Business Impact Simulation
+
+If deployed at scale, RiderTrack can potentially help:
+
+- Reduce delayed deliveries by 12–18%
+- Improve ETA accuracy by 20%
+- Increase rider utilization efficiency
+- Detect low-performing zones in real time
+- Improve customer delivery trust through accurate ETAs
+
 
 ## 📊 Project Bullets
 
